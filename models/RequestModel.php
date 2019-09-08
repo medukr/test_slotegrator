@@ -10,19 +10,22 @@ namespace app\models;
 
 use yii\base\Model;
 
-class RequsetModel extends Model
+class RequestModel extends Model
 {
     public $id;
     public $user;
     public $secret;
 
+
     public function rules()
     {
         return [
-            [['id', 'secret'], 'required'],
+//            [$this->required_params, 'required'],
             [['user'], 'string', 'max' => 255],
             [['id'], 'string', 'length' => 32],
             [['secret'], 'string', 'length' => 40]
         ];
     }
+
+
 }

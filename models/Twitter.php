@@ -35,6 +35,11 @@ class Twitter
     }
 
 
+    public function getUsersLookup($user,$params = []){
+
+        return $this->connection->get("users/lookup", array_merge(['screen_name' => $user], $params));
+    }
+
     public function post($path, array $parameters = [], $json = false){
 
         return $this->connection->post($path, $parameters, $json);

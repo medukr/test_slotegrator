@@ -45,4 +45,16 @@ class User extends \yii\db\ActiveRecord
             'key' => 'Key',
         ];
     }
+
+    public function loadData(RequestModel $request){
+
+        $this->key = $request->id;
+        $this->user_name = $request->user;
+
+        return $this->validate();
+    }
+
+    public function validateSecret($secret){
+        return sha1($this->key . $this->user_name) == $secret;
+    }
 }

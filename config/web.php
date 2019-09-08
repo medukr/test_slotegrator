@@ -1,5 +1,7 @@
 <?php
 
+use function foo\func;
+
 $params = require __DIR__ . '/params.php';
 $db = require __DIR__ . '/db.php';
 
@@ -9,13 +11,26 @@ $config = [
     'bootstrap' => ['log'],
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
-        '@npm'   => '@vendor/npm-asset',
+        '@npm' => '@vendor/npm-asset',
     ],
     'components' => [
         'request' => [
             // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => 'EAfIzyVXsdlwHYvfVDUPPFCLu4wPDtsO',
         ],
+//        'response' => [
+//            'class' => 'yii\web\Response',
+//            'on beforeSend' => function ($event) {
+//                $response = $event->sender;
+//                debug($response);
+//                if ($response->data !== null) {
+//                    $response->data = [
+//                        'error' => $response->data['error']
+//                    ];
+//                    $response->statusCode = 200;
+//                }
+//            },
+//        ],
         'cache' => [
             'class' => 'yii\caching\FileCache',
         ],
@@ -24,7 +39,8 @@ $config = [
             'enableAutoLogin' => true,
         ],
         'errorHandler' => [
-            'errorAction' => 'site/error',
+//            'errorAction' => 'site/error',
+            'errorAction' => 'twitter/error',
         ],
         'mailer' => [
             'class' => 'yii\swiftmailer\Mailer',
