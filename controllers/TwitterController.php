@@ -49,7 +49,7 @@ class TwitterController extends ActiveController
     }
 
 
-    public function getValidRequest(array $params, $request)
+    public function getValidRequest(array $params,array $request)
     {
         foreach ($params as $value) {
             if (!isset($request[$value])) throw new ApiException(400, 'Missing parameter');
@@ -62,6 +62,7 @@ class TwitterController extends ActiveController
 
             return $requestModel;
         }
+
         throw new ApiException(403, 'Access denied');
 
     }

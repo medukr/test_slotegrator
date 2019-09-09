@@ -20,7 +20,6 @@ class RequestModel extends Model
     public function rules()
     {
         return [
-//            [$this->required_params, 'required'],
             [['user'], 'string', 'max' => 255],
             [['id'], 'string', 'length' => 32],
             [['secret'], 'string', 'length' => 40]
