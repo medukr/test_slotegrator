@@ -51,22 +51,18 @@ class TwitterController extends ActiveController
 
     public function getValidRequest(array $params, $request)
     {
-        $requiredParamsModel = new RequiredParamsModel($params);
-
-        //Проверка наличия обязательных входящих параметров
-        if ($requiredParamsModel->load($request, '') && $requiredParamsModel->validate()) {
-
-            $requestModel = new RequestModel();
-
-            //Валидация входящих параметров
-            if ($requestModel->load($request, '') && $requestModel->validate()) {
-
-                return $requestModel;
-            }
-            throw new ApiException(403, 'Access denied');
-
+        foreach ($params as $value) {
+            if (!isset($request[$value])) throw new ApiException(400, 'Missing parameter');
         }
-        throw new ApiException(400, 'Missing parameter');
+
+        $requestModel = new RequestModel();
+
+        //Валидация входящих параметров
+        if ($requestModel->load($request, '') && $requestModel->validate()) {
+
+            return $requestModel;
+        }
+        throw new ApiException(403, 'Access denied');
 
     }
 
@@ -138,9 +134,10 @@ class TwitterController extends ActiveController
 
             if ($this->generateSecret($user->key, $user->user_name) == $request->secret && $user->user_name == $request->user) {
 
-                if ($user->delete()){
+                if ($user->delete()) {
                     return;
-                } throw new ApiException(500, 'Internal error');
+                }
+                throw new ApiException(500, 'Internal error');
             }
         }
         throw new ApiException(403, 'Access denied');
