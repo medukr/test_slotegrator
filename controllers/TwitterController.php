@@ -9,7 +9,6 @@ namespace app\controllers;
 
 
 use app\components\ApiException;
-use app\models\RequiredParamsModel;
 use app\models\RequestModel;
 use app\models\ResponseModel;
 use app\models\Twitter;
@@ -49,7 +48,13 @@ class TwitterController extends ActiveController
     }
 
 
-    public function getValidRequest(array $params,array $request)
+    /**
+     * @param array $params
+     * @param array $request
+     * @return RequestModel
+     * @throws ApiException
+     */
+    public function getValidRequest(array $params, array $request)
     {
         foreach ($params as $value) {
             if (!isset($request[$value])) throw new ApiException(400, 'Missing parameter');
@@ -68,89 +73,140 @@ class TwitterController extends ActiveController
     }
 
 
+    /**
+     * @return |null
+     * @throws ApiException
+     */
     public function actionAdd()
     {
 
         $request = $this->getValidRequest(['id', 'user', 'secret'], \Yii::$app->request->get());
 
-        //Валидация секретного ключа
-        if ($this->generateSecret($request->id, $request->user) == $request->secret) {
+        $this->validateSecret($request->id, $request->user, $request->secret);
 
-            $user = new User();
+        $user = new User();
 
-            //Загрузка данных из запроса в модель пользователя, проверка уникальности id
-            if ($user->loadData($request)) {
+        //Загрузка данных из запроса в модель пользователя, проверка уникальности id
+        if ($user->loadData($request)) {
 
-                //Проверка существования пользователя в твиттере
-                $response = $this->getTwitter()->getUsersLookup($user->user_name);
-                if (is_array($response) && isset($response[0]->screen_name) && $response[0]->screen_name == $request->user) {
+            //Проверка существования пользователя в твиттере
+            $response = $this->getTwitter()->getUsersLookup($user->user_name);
+            if (is_array($response) && isset($response[0]->screen_name) && $response[0]->screen_name == $request->user) {
 
-                    //Попытка сохранить нового пользователся
-                    if ($user->save()) {
-                        return null;
+                //Попытка сохранить нового пользователся
+                if ($user->save()) {
+                    return null;
 
-                    }
-                    throw new ApiException(500, 'Internal error');
                 }
-                throw new ApiException(400, 'Wrong user name');
+                throw new ApiException(500, 'Internal error');
             }
-            throw new ApiException(404, 'User already exist');
+            throw new ApiException(400, 'Wrong user name');
         }
-        throw new ApiException(403, 'Access denied');
-
-
-        //            return 'id=' . md5('jeffbezos') . '&user=jeffbezos&secret=' . sha1(md5('jeffbezos') . 'jeffbezos');
+        throw new ApiException(404, 'User already exist');
 
     }
 
 
+    /**
+     * @return array
+     * @throws ApiException
+     */
     public function actionFeed()
     {
-
         $request = $this->getValidRequest(['id', 'secret'], \Yii::$app->request->get());
 
         $user = $this->findUser($request->id);
 
-        if ($this->generateSecret($user->key, $user->user_name) == $request->secret) {
-            $responseTwitter = $this->getTwitter()->getUserTimeline($user->user_name);
+        //Ппроверяем соответсвие секретного ключа в запросе к сохраненному пользователю
+        $this->validateSecret($user->key, $user->user_name, $request->secret);
 
-            if (is_array($responseTwitter)) {
-                $responseModel = new ResponseModel($responseTwitter);
-                return $responseModel->getFormattedResponse();
+        $responseTwitter = $this->getTwitter()->getUserTimeline($user->user_name);
+
+        if (is_array($responseTwitter)) {
+            $responseModel = new ResponseModel($responseTwitter);
+            return $responseModel->getFormattedResponse();
+        }
+        throw new ApiException(500, 'Internal error');
+
+    }
+
+
+    /**
+     * @throws ApiException
+     * @throws \Throwable
+     * @throws \yii\db\StaleObjectException
+     */
+    public function actionRemove()
+    {
+        $request = $this->getValidRequest(['id', 'user', 'secret'], \Yii::$app->request->get());
+
+        //проверяем правильность секретного ключа в запросе
+        $this->validateSecret($request->id, $request->user, $request->secret);
+
+        $user = $this->findUser($request->id);
+
+        //Ппроверяем соответсвие секретного ключа в запросе к сохраненному пользователю
+        $this->validateSecret($user->key, $user->user_name, $request->secret);
+
+        //Исключаем шанс коллизии
+        if ($user->user_name == $request->user) {
+
+            if ($user->delete()) {
+                return;
             }
             throw new ApiException(500, 'Internal error');
         }
         throw new ApiException(403, 'Access denied');
 
-
     }
 
 
-    public function actionRemove()
+    /**
+     * @param string $id
+     * @param string $user
+     * @param string $secret
+     * @return bool
+     * @throws ApiException
+     */
+    public function validateSecret(string $id, string $user, string $secret): bool
     {
-        $request = $this->getValidRequest(['id', 'user', 'secret'], \Yii::$app->request->get());
 
-        if ($this->generateSecret($request->id, $request->user) == $request->secret) {
-            $user = $this->findUser($request->id);
-
-            if ($this->generateSecret($user->key, $user->user_name) == $request->secret && $user->user_name == $request->user) {
-
-                if ($user->delete()) {
-                    return;
-                }
-                throw new ApiException(500, 'Internal error');
-            }
-        }
+        if ($this->generateSecret($id, $user) === $secret) return true;
         throw new ApiException(403, 'Access denied');
+
     }
 
 
+    /**
+     * @param $id
+     * @param $user
+     * @return string
+     */
     public function generateSecret($id, $user)
     {
         return sha1($id . $user);
     }
 
 
+    /**
+     * @param $user_name
+     * @return string
+     */
+    private function generateExampleAddRequestString($user_name)
+    {
+        return http_build_query([
+            'id' => md5($user_name),
+            'user' => $user_name,
+            'secret' => $this->generateSecret(md5($user_name), $user_name)
+        ]);
+    }
+
+
+    /**
+     * @param $key
+     * @return array|\yii\db\ActiveRecord|null
+     * @throws ApiException
+     */
     protected function findUser($key)
     {
         if (($model = User::find()->where('`key` = :key', [':key' => $key])->one()) !== null) {
@@ -161,6 +217,9 @@ class TwitterController extends ActiveController
     }
 
 
+    /**
+     * @return Twitter
+     */
     protected function getTwitter()
     {
 
