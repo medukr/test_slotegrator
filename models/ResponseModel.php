@@ -8,9 +8,6 @@
 namespace app\models;
 
 
-use phpDocumentor\Reflection\Types\This;
-use yii\base\Model;
-
 class ResponseModel
 {
 

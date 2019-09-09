@@ -54,7 +54,4 @@ class User extends \yii\db\ActiveRecord
         return $this->validate();
     }
 
-    public function validateSecret($secret){
-        return sha1($this->key . $this->user_name) == $secret;
-    }
 }
