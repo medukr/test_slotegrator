@@ -28,7 +28,7 @@ class User extends \yii\db\ActiveRecord
     {
         return [
             [['user_name', 'key'], 'required'],
-            [['user_name', 'key'], 'unique'],
+            [['key'], 'unique'],
             [['user_name'], 'string', 'max' => 255],
             [['key'], 'string', 'max' => 32],
         ];
