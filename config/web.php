@@ -18,19 +18,6 @@ $config = [
             // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => 'EAfIzyVXsdlwHYvfVDUPPFCLu4wPDtsO',
         ],
-//        'response' => [
-//            'class' => 'yii\web\Response',
-//            'on beforeSend' => function ($event) {
-//                $response = $event->sender;
-//                debug($response);
-//                if ($response->data !== null) {
-//                    $response->data = [
-//                        'error' => $response->data['error']
-//                    ];
-//                    $response->statusCode = 200;
-//                }
-//            },
-//        ],
         'cache' => [
             'class' => 'yii\caching\FileCache',
         ],
@@ -39,7 +26,6 @@ $config = [
             'enableAutoLogin' => true,
         ],
         'errorHandler' => [
-//            'errorAction' => 'site/error',
             'errorAction' => 'twitter/error',
         ],
         'mailer' => [
@@ -64,10 +50,8 @@ $config = [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
-                ['class' => 'yii\rest\UrlRule',
-                    'controller' => 'user',
-                    'except' => ['add', 'feed', 'remove']
-                ]
+                    '/twitter/<_a:add|feed|remove>' => 'twitter/<_a>',
+                    '/twitter/<_a:\w+?>' => 'twitter/error',
             ]
         ],
 
